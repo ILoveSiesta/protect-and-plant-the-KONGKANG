@@ -1,0 +1,1 @@
+TRUNCATE TABLE participations RESTART IDENTITY;

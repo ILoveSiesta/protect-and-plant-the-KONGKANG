@@ -1,0 +1,28 @@
+{
+  "name": "protect-and-plant-the-kongkang",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Interactive mangrove restoration booth web app — ธรรมชาติในเมืองใหญ่ (สะพานรักษ์ทะเลบางขุนเทียน)",
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c cyan,green \"node server/index.js --dev-port=3001\" \"vite --port 3000\"",
+    "dev:server": "node server/index.js --dev-port=3001",
+    "dev:client": "vite --port 3000",
+    "build": "vite build",
+    "start": "node server/index.js",
+    "db:reset": "node server/reset-db.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "lucide-react": "^0.469.0",
+    "pg": "^8.13.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.2",
+    "vite": "^6.0.11"
+  }
+}

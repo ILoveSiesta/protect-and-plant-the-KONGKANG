@@ -1,0 +1,48 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: kongkang-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-kongkang}
+      POSTGRES_USER: ${POSTGRES_USER:-kongkang}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kongkang_pass}
+    ports:
+      - "${POSTGRES_PORT:-5434}:5432"
+    volumes:
+      - kongkang_pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kongkang} -d ${POSTGRES_DB:-kongkang}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - kongkang-network
+
+  web:
+    build: .
+    container_name: kongkang-web
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      PGHOST: db
+      PGPORT: 5432
+      PGDATABASE: ${POSTGRES_DB:-kongkang}
+      PGUSER: ${POSTGRES_USER:-kongkang}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-kongkang_pass}
+    networks:
+      - kongkang-network
+
+volumes:
+  kongkang_pgdata:
+
+networks:
+  kongkang-network:
+    driver: bridge
