@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { BookOpen, Check, Lock, Menu, Sprout, Users, Waves } from 'lucide-react';
+import { BookOpen, Check, Lock, Menu, Sprout, Trees, Users, Waves } from 'lucide-react';
 import { BOOTH_INFO } from '../data/boothContent.js';
 
 export default function Header({
@@ -75,6 +75,18 @@ export default function Header({
           >
             <Waves size={16} />
             <span>ทำกิจกรรมบูธ</span>
+          </button>
+
+          <button
+            type="button"
+            className={`nav-btn ${activeView === 'forest' ? 'active' : ''}`}
+            onClick={() => {
+              setDrawerOpen(false);
+              onNavigate('forest');
+            }}
+          >
+            <Trees size={16} />
+            <span>ผืนป่ารวมทุกคน</span>
           </button>
 
           <button

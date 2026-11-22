@@ -69,7 +69,7 @@ export default function AboutModal({ isOpen, onClose }) {
           <Users size={18} />
           สมาชิกกลุ่มและบทบาทหน้าที่ ({BOOTH_INFO.groupCode})
         </h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div className="modal-team-grid">
           {BOOTH_INFO.teamMembers.map((member) => (
             <div
               key={member.names}

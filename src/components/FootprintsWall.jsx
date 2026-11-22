@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Download, Search, Sprout } from 'lucide-react';
+import { Download, Search, Sprout, Trees } from 'lucide-react';
 import { BOOTH_INFO } from '../data/boothContent.js';
 import { fetchParticipations, formatThaiDateTime } from '../utils/api.js';
 
@@ -9,7 +9,7 @@ const BARRIER_LABELS = {
   mixed: 'แนวผสมผสาน',
 };
 
-export default function FootprintsWall({ zones, stats, onStartActivity }) {
+export default function FootprintsWall({ zones, stats, onStartActivity, onViewForest }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -66,6 +66,13 @@ export default function FootprintsWall({ zones, stats, onStartActivity }) {
         </div>
 
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          {onViewForest && (
+            <button type="button" className="btn btn-secondary" onClick={onViewForest}>
+              <Trees size={17} />
+              <span>ดูผืนป่ารวมทุกคน</span>
+            </button>
+          )}
+
           <a
             href="/api/participations/export.csv"
             className="btn btn-secondary"
