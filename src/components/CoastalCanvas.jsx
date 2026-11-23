@@ -298,6 +298,20 @@ function drawZoneUpperLandmark(ctx, w, h, time, zoneCode, scale) {
   ctx.restore();
 }
 
+function drawCurlingWave(ctx, cx, y, len, amp) {
+  const dx = (u) => cx + (0.5 - u) * len;
+  const dy = (v) => y + v * amp * 2.2;
+
+  ctx.beginPath();
+  ctx.moveTo(dx(0.0), dy(0.05));
+  ctx.bezierCurveTo(dx(0.16), dy(0.24), dx(0.34), dy(-0.36), dx(0.56), dy(-0.42));
+  ctx.bezierCurveTo(dx(0.68), dy(-0.44), dx(0.73), dy(-0.26), dx(0.66), dy(-0.16));
+  ctx.bezierCurveTo(dx(0.62), dy(-0.24), dx(0.55), dy(-0.16), dx(0.57), dy(0.02));
+  ctx.bezierCurveTo(dx(0.59), dy(0.16), dx(0.7), dy(0.18), dx(0.84), dy(0.11));
+  ctx.quadraticCurveTo(dx(0.93), dy(0.06), dx(1.0), dy(0.11));
+  ctx.stroke();
+}
+
 function drawSeaAndWaves(ctx, w, h, time, waveIntensity, barrierChoice, zoneCode, recoveredOffset, scale) {
   const seaTop = h * 0.35;
   const seaGrad = ctx.createLinearGradient(w * 0.25, seaTop, w, h);
@@ -346,23 +360,32 @@ function drawSeaAndWaves(ctx, w, h, time, waveIntensity, barrierChoice, zoneCode
 
       const isBehindBarrier = xNorm < BARRIER_X_NORM;
       const localPower = isBehindBarrier ? 1 - protection : 1;
-      const amp = (2.6 + waveIntensity * 1.45) * scale * Math.max(0.16, localPower);
-      const crestLen = (24 + waveIntensity * 5) * scale * Math.max(0.32, localPower);
+      const amp = (4.2 + waveIntensity * 1.9) * scale * Math.max(0.22, localPower);
+      const crestLen = (32 + waveIntensity * 6) * scale * Math.max(0.38, localPower);
+      const isCalmed = isBehindBarrier && protection > 0.45;
 
-      ctx.beginPath();
-      ctx.moveTo(xNorm * w, y);
-      ctx.quadraticCurveTo(
-        xNorm * w + crestLen * 0.5,
-        y - amp,
-        xNorm * w + crestLen,
-        y
-      );
-      ctx.lineWidth = (isBehindBarrier && protection > 0.45 ? 1.5 : 2.6) * scale;
-      ctx.strokeStyle =
-        isBehindBarrier && protection > 0.45
-          ? 'rgba(220, 245, 248, 0.32)'
-          : 'rgba(240, 252, 255, 0.8)';
-      ctx.stroke();
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = (isCalmed ? 1.45 : 2.5) * scale;
+      ctx.strokeStyle = isCalmed
+        ? 'rgba(220, 245, 248, 0.34)'
+        : 'rgba(244, 253, 255, 0.86)';
+
+      if (isCalmed) {
+        ctx.beginPath();
+        ctx.moveTo(xNorm * w, y);
+        ctx.quadraticCurveTo(
+          xNorm * w + crestLen * 0.5,
+          y - amp * 0.25,
+          xNorm * w + crestLen,
+          y
+        );
+        ctx.stroke();
+      } else {
+        drawCurlingWave(ctx, xNorm * w + crestLen * 0.5, y, crestLen, amp);
+      }
+      ctx.restore();
     }
   }
 }
@@ -454,7 +477,7 @@ function drawShorelineAndMud(
   ctx.fill();
 
   // Eroding mud crumbs & dead stumps when unprotected
-  if (barrierChoice === 'none' && mode !== 'planting') {
+  if (barrierChoice === 'none' && mode !== 'planting' && mode !== 'forest') {
     ctx.fillStyle = 'rgba(110, 82, 52, 0.68)';
     const particleCount = 6 + waveIntensity * 3;
     for (let i = 0; i < particleCount; i += 1) {
@@ -836,7 +859,8 @@ export default function CoastalCanvas({
       const cur = propsRef.current;
       const zoneCode = cur.zone?.code || 'boardwalk_mid';
       const waveIntensity = cur.zone?.wave_intensity || 3;
-      const activeBarrier = cur.mode === 'planting' ? 'rock' : cur.barrierChoice;
+      const isForestLike = cur.mode === 'planting' || cur.mode === 'forest';
+      const activeBarrier = isForestLike ? 'rock' : cur.barrierChoice;
 
       // Narrow initial shore on far left; grows progressively rightward as many participants plant
       const communityCount = cur.existingTrees.length;
@@ -844,7 +868,7 @@ export default function CoastalCanvas({
         communityCount + (cur.userTree ? 0.25 + cur.growthProgress * 0.75 : 0);
       const maxExpansion = 0.41;
       const recoveredOffset =
-        cur.mode === 'planting' && effectiveTrees > 0
+        isForestLike && effectiveTrees > 0
           ? maxExpansion * (1 - Math.exp(-effectiveTrees / 12))
           : 0;
 
@@ -903,7 +927,7 @@ export default function CoastalCanvas({
 
       drawBarrierLine(ctx, w, h, activeBarrier, cur.mode, scale);
 
-      if (cur.mode === 'planting') {
+      if (isForestLike) {
         const allTrees = [
           ...cur.existingTrees.map((t) => ({
             ...t,
@@ -1003,7 +1027,9 @@ export default function CoastalCanvas({
               : cur.barrierChoice === 'bamboo'
                 ? 'โหมดจำลอง • แนวไม้ไผ่ 5 จุด'
                 : 'โหมดจำลอง • แนวคันหิน 5 จุด'
-            : `ล็อกแนวคันหิน • เดิม ${communityCount} ต้น${cur.userTree ? ' + ของคุณ 1' : ''}`;
+            : cur.mode === 'forest'
+              ? `ผืนป่ารวมโซนนี้ • ${communityCount} ต้น`
+              : `ล็อกแนวคันหิน • เดิม ${communityCount} ต้น${cur.userTree ? ' + ของคุณ 1' : ''}`;
       const badgeW = 246 * scale;
       const badgeH = 28 * scale;
       ctx.fillStyle = 'rgba(22, 61, 40, 0.8)';
@@ -1037,11 +1063,7 @@ export default function CoastalCanvas({
   function handlePointerMove(event) {
     const pos = getNormalizedPointer(event);
     if (!pos) return;
-    if (mode === 'planting') {
-      const inZone =
-        pos.xNorm >= 0.08 && pos.xNorm <= 0.56 && pos.yNorm >= 0.42 && pos.yNorm <= 0.92;
-      event.currentTarget.style.cursor = inZone ? 'crosshair' : 'default';
-
+    if (mode === 'planting' || mode === 'forest') {
       let found = null;
       for (const tree of existingTrees) {
         if (Math.hypot(pos.xNorm - tree.x, pos.yNorm - tree.y) < 0.045) {
@@ -1050,6 +1072,14 @@ export default function CoastalCanvas({
         }
       }
       hoveredTreeRef.current = found;
+
+      if (mode === 'planting') {
+        const inZone =
+          pos.xNorm >= 0.08 && pos.xNorm <= 0.56 && pos.yNorm >= 0.42 && pos.yNorm <= 0.92;
+        event.currentTarget.style.cursor = inZone ? 'crosshair' : 'default';
+      } else {
+        event.currentTarget.style.cursor = found ? 'pointer' : 'default';
+      }
     } else {
       hoveredTreeRef.current = null;
       event.currentTarget.style.cursor = 'default';

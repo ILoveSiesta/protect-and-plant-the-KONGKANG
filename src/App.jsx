@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import AboutModal from './components/AboutModal.jsx';
+import CommunityForest from './components/CommunityForest.jsx';
 import FootprintsWall from './components/FootprintsWall.jsx';
 import Header from './components/Header.jsx';
 import Step1ZoneSelect from './components/Step1ZoneSelect.jsx';
@@ -19,7 +20,7 @@ import {
 } from './utils/api.js';
 
 export default function App() {
-  const [view, setView] = useState('welcome'); // 'welcome' | 'activity' | 'wall'
+  const [view, setView] = useState('welcome'); // 'welcome' | 'activity' | 'forest' | 'wall'
   const [aboutOpen, setAboutOpen] = useState(false);
 
   const [zones, setZones] = useState(BOOTH_INFO.fallbackZones);
@@ -115,6 +116,9 @@ export default function App() {
     if (targetView === 'activity' && savedRecord) {
       resetActivity({ targetView: 'activity' });
       return;
+    }
+    if (targetView === 'forest' || targetView === 'wall') {
+      loadInitialData();
     }
     setView(targetView);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -239,8 +243,6 @@ export default function App() {
           <WelcomeHero
             stats={stats}
             onStart={() => resetActivity({ targetView: 'activity' })}
-            onViewWall={() => handleNavigate('wall')}
-            onOpenAbout={() => setAboutOpen(true)}
           />
         )}
 
@@ -305,11 +307,24 @@ export default function App() {
           </>
         )}
 
+        {view === 'forest' && (
+          <CommunityForest
+            zones={zones}
+            treesByZone={treesByZone}
+            stats={stats}
+            initialZoneCode={selectedZone?.code}
+            onRefresh={loadInitialData}
+            onStartActivity={() => resetActivity({ targetView: 'activity' })}
+            onViewWall={() => handleNavigate('wall')}
+          />
+        )}
+
         {view === 'wall' && (
           <FootprintsWall
             zones={zones}
             stats={stats}
             onStartActivity={() => resetActivity({ targetView: 'activity' })}
+            onViewForest={() => handleNavigate('forest')}
           />
         )}
       </main>
